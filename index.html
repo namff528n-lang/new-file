@@ -1,0 +1,729 @@
+html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', 'Segoe UI', monospace;
+        }
+
+        html, body {
+            min-height: 100%;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            padding: 20px;
+            color: #00ff88;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ===== MA TRẬN NỀN ===== */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.55;
+        }
+
+        /* ===== SCANLINE + GLITCH OVERLAY ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 136, 0.04) 0px,
+                rgba(0, 255, 136, 0.04) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 1;
+            animation: scan 8s linear infinite;
+        }
+
+        @keyframes scan {
+            from { background-position: 0 0; }
+            to { background-position: 0 100px; }
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(5, 15, 10, 0.82);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 
+                0 0 30px rgba(0, 255, 136, 0.4),
+                0 0 60px rgba(0, 255, 136, 0.2),
+                inset 0 0 40px rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(3px);
+        }
+
+        /* Viền glitch chạy quanh container */
+        .container::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 22px;
+            padding: 2px;
+            background: linear-gradient(45deg, #00ff88, #00e5ff, #ff00ea, #00ff88);
+            background-size: 400% 400%;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: borderFlow 4s linear infinite;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        @keyframes borderFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.08), rgba(0, 229, 255, 0.05));
+            padding: 40px 30px 30px;
+            text-align: center;
+            color: #00ff88;
+            position: relative;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.25);
+        }
+
+        .avatar {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 3px solid #00ff88;
+            object-fit: cover;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.8),
+                0 0 40px rgba(0, 255, 136, 0.4),
+                inset 0 0 10px rgba(0, 255, 136, 0.3);
+            margin-bottom: 15px;
+            animation: avatarPulse 2.5s ease-in-out infinite;
+            filter: contrast(1.1) saturate(1.2);
+        }
+
+        @keyframes avatarPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.8), 0 0 40px rgba(0, 255, 136, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 136, 1), 0 0 60px rgba(0, 255, 136, 0.7); }
+        }
+
+        /* ===== TÊN GLITCH ===== */
+        .editable {
+            display: inline-block;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            position: relative;
+            min-width: 80px;
+            color: #00ff88;
+            text-shadow: 
+                0 0 6px rgba(0, 255, 136, 0.8),
+                0 0 12px rgba(0, 255, 136, 0.5);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .editable:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .editable::after {
+            content: '✎';
+            font-size: 14px;
+            margin-left: 8px;
+            opacity: 0.6;
+            font-weight: normal;
+            text-shadow: none;
+        }
+
+        .editable.empty::before {
+            content: 'Nam🎧ྀི';
+            opacity: 0.6;
+            font-style: italic;
+            font-weight: normal;
+            letter-spacing: 0;
+        }
+
+        .editable:not(.empty)::before {
+            content: none;
+        }
+
+        /* Hiệu ứng glitch khi có tên */
+        .editable:not(.empty) {
+            animation: glitchText 4s infinite;
+        }
+
+        @keyframes glitchText {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); text-shadow: 2px 0 #ff00ea, -2px 0 #00e5ff; }
+            94% { transform: translate(2px, -1px); text-shadow: -2px 0 #ff00ea, 2px 0 #00e5ff; }
+            96% { transform: translate(-1px, -1px); text-shadow: 1px 0 #ff00ea, -1px 0 #00e5ff; }
+        }
+
+        .header h1 {
+            font-size: 30px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ===== INPUT SỬA TÊN ===== */
+        .edit-input {
+            font-family: 'Courier New', monospace;
+            font-size: inherit;
+            font-weight: inherit;
+            color: #00ff88;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            padding: 4px 10px;
+            text-align: center;
+            outline: none;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+
+        .header h1 .edit-input {
+            font-size: 24px;
+        }
+
+        /* ===== NÚT NHẠC ===== */
+        .music-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 100;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #00ff88;
+            background: rgba(0, 20, 10, 0.9);
+            color: #00ff88;
+            font-size: 26px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.6),
+                0 0 40px rgba(0, 255, 136, 0.3);
+            transition: all 0.3s ease;
+            animation: musicPulse 1.5s ease-in-out infinite;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 
+                0 0 30px rgba(0, 255, 136, 0.9),
+                0 0 60px rgba(0, 255, 136, 0.5);
+        }
+
+        @keyframes musicPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6), 0 0 40px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 136, 1), 0 0 60px rgba(0, 255, 136, 0.6); }
+        }
+
+        .music-btn.playing {
+            animation: musicSpin 3s linear infinite, musicPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes musicSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== SOCIAL ===== */
+        .social-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.6);
+            border-radius: 25px;
+            color: #00ff88;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.6);
+        }
+
+        .social-btn:hover {
+            background: #00ff88;
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.8),
+                0 0 40px rgba(0, 255, 136, 0.4);
+            text-shadow: none;
+        }
+
+        .social-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* ===== RESET BTN ===== */
+        .reset-btn {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 12px;
+            color: rgba(0, 255, 136, 0.7);
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            padding: 5px 14px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 0, 100, 0.2);
+            border-color: #ff0064;
+            color: #ff0064;
+            box-shadow: 0 0 15px rgba(255, 0, 100, 0.5);
+        }
+
+        /* ===== CONTENT ===== */
+        .content {
+            padding: 30px 40px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #00ff88;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.7);
+            letter-spacing: 1px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 22px;
+            background: #00ff88;
+            border-radius: 2px;
+            box-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+        }
+
+        /* ===== EMBED CARDS ===== */
+        .embed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .embed-card {
+            background: rgba(0, 15, 8, 0.9);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 
+                0 0 15px rgba(0, 255, 136, 0.2),
+                inset 0 0 15px rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .embed-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 0 25px rgba(0, 255, 136, 0.5),
+                0 0 50px rgba(0, 255, 136, 0.2);
+            border-color: rgba(0, 255, 136, 0.7);
+        }
+
+        .embed-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.15), rgba(0, 229, 255, 0.1));
+            border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .embed-card-header .name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00ff88;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+            font-family: 'Courier New', monospace;
+        }
+
+        .embed-card-header .open-link {
+            font-size: 12px;
+            color: #00ff88;
+            text-decoration: none;
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            padding: 5px 12px;
+            border-radius: 15px;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        .embed-card-header .open-link:hover {
+            background: #00ff88;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+        }
+
+        .embed-card iframe {
+            width: 100%;
+            height: 320px;
+            border: none;
+            display: block;
+            flex-grow: 1;
+            background: #000;
+            filter: brightness(0.95) contrast(1.05);
+        }
+
+        .embed-note {
+            font-size: 13px;
+            color: rgba(0, 255, 136, 0.5);
+            margin-top: 12px;
+            font-style: italic;
+            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+        }
+
+        .embed-note code {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.1);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 15, 8, 0.9);
+            color: rgba(0, 255, 136, 0.6);
+            font-size: 13px;
+            border-top: 1px solid rgba(0, 255, 136, 0.2);
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.4);
+        }
+
+        /* ===== TERMINAL GÓC TRÁI ===== */
+        .terminal-badge {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #00ff88;
+            background: rgba(0, 20, 10, 0.85);
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.8);
+        }
+
+        .terminal-badge .blink {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .header h1 { font-size: 22px; }
+            .embed-grid { grid-template-columns: 1fr; }
+            .embed-card iframe { height: 280px; }
+            .music-btn { width: 50px; height: 50px; font-size: 22px; bottom: 15px; right: 15px; }
+            .terminal-badge { font-size: 10px; padding: 6px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas ma trận nền -->
+    <canvas id="matrix-bg"></canvas>
+
+    <!-- Badge terminal góc trái -->
+    <div class="terminal-badge">
+        <span id="terminalText">root@hacker:~$</span> <span class="blink">█</span>
+    </div>
+
+    <!-- Nhạc nền -->
+    <audio id="bgMusic" loop>
+        <!-- Thay src bằng link nhạc của bạn (mp3/ogg) -->
+        <source src="https://zingmp3.vn/bai-hat/ASKIM-COK-PARDON-Sped-Up-Casap/qGpRKK01G32.html" type="audio/mpeg">
+        Trình duyệt không hỗ trợ audio.
+    </audio>
+    <button class="music-btn" id="musicBtn" title="Bật/Tắt nhạc">♪</button>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <img src="https://via.placeholder.com/130/001a0d/00ff88?text=HACKER" alt="Avatar" class="avatar">
+
+            <h1>
+                <span class="editable empty" id="nameDisplay" data-key="profileName" data-default=""></span>
+            </h1>
+
+            <button class="reset-btn" onclick="resetProfile()">↺ Xóa tên</button>
+
+            <div class="social-links">
+                <a href="https://www.tiktok.com/@
+c.ngc345" target="_blank" rel="noopener" class="social-btn">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                    </svg>
+                    TikTok
+                </a>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="section">
+                <h2 class="section-title">Website liên kết</h2>
+                <div class="embed-grid">
+
+                    <div class="embed-card">
+                        <div class="embed-card-header">
+                            <span class="name">🌐 Wikipedia</span>
+                            <a href="https://vi.wikipedia.org" target="_blank" rel="noopener" class="open-link">Mở ↗</a>
+                        </div>
+                        <iframe src="https://vi.wikipedia.org" title="Wikipedia" loading="lazy" referrerpolicy="no-referrer"></iframe>
+                    </div>
+
+                    <div class="embed-card">
+                        <div class="embed-card-header">
+                            <span class="name">📖 MDN Web Docs</span>
+                            <a href="https://developer.mozilla.org" target="_blank" rel="noopener" class="open-link">Mở ↗</a>
+                        </div>
+                        <iframe src="https://developer.mozilla.org" title="MDN" loading="lazy" referrerpolicy="no-referrer"></iframe>
+                    </div>
+
+                    <div class="embed-card">
+                        <div class="embed-card-header">
+                            <span class="name">💻 GitHub</span>
+                            <a href="https://github.com" target="_blank" rel="noopener" class="open-link">Mở ↗</a>
+                        </div>
+                        <iframe src="https://github.com" title="GitHub" loading="lazy" referrerpolicy="no-referrer"></iframe>
+                    </div>
+
+                </div>
+                <p class="embed-note">
+                    * Thay <code>src="..."</code> bằng link web bạn muốn nhúng.
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 — SYSTEM ONLINE <span style="color:#00ff88">●</span>
+        </div>
+    </div>
+
+    <script>
+        /* ===== MA TRẬN ===== */
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵ';
+        const fontSize = 16;
+        let columns = Math.floor(canvas.width / fontSize);
+        let drops = Array(columns).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff88';
+            ctx.font = fontSize + 'px monospace';
+            ctx.shadowColor = '#00ff88';
+            ctx.shadowBlur = 8;
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+            ctx.shadowBlur = 0;
+        }
+
+        window.addEventListener('resize', () => {
+            columns = Math.floor(canvas.width / fontSize);
+            drops = Array(columns).fill(1);
+        });
+
+        setInterval(drawMatrix, 90);
+
+        /* ===== NHẠC ===== */
+        const music = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        let isPlaying = false;
+
+        music.volume = 0.35;
+
+        musicBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                music.pause();
+                musicBtn.textContent = '♪';
+                musicBtn.classList.remove('playing');
+                isPlaying = false;
+            } else {
+                music.play().then(() => {
+                    musicBtn.textContent = '❚❚';
+                    musicBtn.classList.add('playing');
+                    isPlaying = true;
+                }).catch(err => {
+                    console.log('Không phát được nhạc:', err);
+                    alert('Trình duyệt chặn autoplay. Hãy click lại nút nhạc.');
+                });
+            }
+        });
+
+        /* ===== ĐỔI TÊN ===== */
+        document.querySelectorAll('.editable').forEach(el => {
+            const key = el.dataset.key;
+            const def = el.dataset.default || '';
+
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                el.textContent = saved;
+                el.classList.remove('empty');
+            } else {
+                el.textContent = def;
+                if (!def) el.classList.add('empty');
+            }
+
+            el.addEventListener('click', () => startEdit(el, key, def));
+        });
+
+        function startEdit(el, key, def) {
+            if (el.querySelector('input')) return;
+
+            const current = el.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = (current === def) ? '' : current;
+            input.className = 'edit-input';
+            input.maxLength = 60;
+            input.placeholder = 'Nhập tên...';
+
+            el.textContent = '';
+            el.classList.remove('empty');
+            el.appendChild(input);
+            input.focus();
+            input.select();
+
+            const finish = () => {
+                const val = input.value.trim();
+                if (val) {
+                    el.textContent = val;
+                    el.classList.remove('empty');
+                    localStorage.setItem(key, val);
+                } else {
+                    el.textContent = '';
+                    el.classList.add('empty');
+                    localStorage.removeItem(key);
+                }
+            };
+
+            input.addEventListener('blur', finish);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') input.blur();
+                else if (e.key === 'Escape') {
+                    if (current) { el.textContent = current; el.classList.remove('empty'); }
+                    else { el.textContent = ''; el.classList.add('empty'); }
+                }
+            });
+        }
+
+        function resetProfile() {
+            if (!confirm('Xóa tên đã nhập?')) return;
+            localStorage.removeItem('profileName');
+            const nameEl = document.getElementById('nameDisplay');
+            nameEl.textContent = '';
+            nameEl.classList.add('empty');
+        }
+
+        /* ===== TERMINAL TEXT ===== */
+        const termTexts = [
+            'root@hacker:~$ access granted',
+            'root@hacker:~$ firewall bypassed',
+            'root@hacker:~$ injecting payload...',
+            'root@hacker:~$ connection encrypted',
+            'root@hacker:~$ anonymous mode ON'
+        ];
+        let termIdx = 0;
+        setInterval(() => {
+            termIdx = (termIdx + 1) % termTexts.length;
+            document.getElementById('terminalText').textContent = termTexts[termIdx];
+        }, 3500);
+    </script>
+</body>
+</html>
